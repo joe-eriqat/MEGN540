@@ -55,6 +55,27 @@ void Initialize_Timing()
     // Enable timing, setup prescalers, etc.
 
     _count_ms = 0;
+    // NOTE
+    // Setup OC0X before setting DDR pin to output
+
+    TCNT0  = 0x00;                           // Set time to zero
+    TCCR0B = ( 1 << CS00 ) | ( 1 << CS01 );  // set prescaler to 64
+
+    TCCR0A = ( 1 << WGM01 );  // Toggle on compare match, controls OC0A behavior, on then off then on (Table 13-1) How to toggle?
+    // WGM01 sets CTC mode for clearing timer
+
+    OCR0A = 249;  // 8 bit value compared to TCNT0, used to generate output compare interrupt. set as 0xF9 = 250 to imply one millisecond?
+
+    TIMSK0 = ( 1 << OCIE0A );  // push a 1 to this location to enable the OCR interrupt
+
+    // Clear timer on compare match? WGM1 = 1, combined with WGM02 in TCCR0B register. CTC = clear timer on compare match. MODE 2
+    // WGM02 in TCCR0B is "Waveform generation mode"
+
+    // OCF0A = Flag for interrupt, inside TIFR0 register. Is this used here? How to toggle back and forth and count the changes
+    // if( OCF0A ) {
+    //     _count_ms++;  // if the output flag is triggered, count one ms
+    // }
+    // Do we need to do anything with DDR port for flag/output compare mode?
 }
 
 /**
@@ -65,7 +86,7 @@ float Timing_Get_Time_Sec()
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
-    return 0;
+    return ( _count_ms / 1000.0f );
 }
 Time_t Timing_Get_Time()
 {
@@ -73,7 +94,7 @@ Time_t Timing_Get_Time()
     // YOUR CODE HERE
     Time_t time = {
         .millisec = _count_ms,
-        .microsec = 0  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
+        .microsec = ( TCNT0 * 4 )  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
     };
 
     return time;
@@ -92,7 +113,7 @@ uint16_t Timing_Get_Micro()
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
-    return 0;  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
+    return ( TCNT0 * 4 );  // YOU NEED TO REPLACE THIS WITH A CALL TO THE TIMER0 REGISTER AND MULTIPLY APPROPRIATELY
 }
 
 /**
@@ -103,21 +124,23 @@ uint16_t Timing_Get_Micro()
 float Timing_Seconds_Since( const Time_t* time_start_p )
 {
     // *** MEGN540 Lab 2 ***
-    // YOUR CODE HERE
-    float delta_time = 0;
+
+    float current_time = Timing_Get_Time_Sec();
+
+    float delta_time = current_time - ( time_start_p->millisec / 1000.0f );
     return delta_time;
 }
 
 /** This is the Interrupt Service Routine for the Timer0 Compare A feature.
  * You'll need to set the compare flags properly for it to work.
  */
-/*ISR( DEFINE THE COMPARISON TRIGGER )
+ISR( TIMER0_COMPA_vect )
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
     // YOU NEED TO RESET THE Timer0 Value to 0 again!
 
     // take care of upticks of both our internal and external variables.
-    _count_ms ++;
-
-}*/
+    TCNT0 = 0x00;
+    _count_ms++;
+}

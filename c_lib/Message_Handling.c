@@ -92,33 +92,101 @@ void Task_Message_Handling( float _time_since_last )
         case '/':
             if( USB_Msg_Length() >= _Message_Length( '/' ) ) {
                 // then process your divide...
+                USB_Msg_Get();  // removes the first character from the received buffer,
+                                // we already know it was a * so no need to save it as a
+                                // variable
 
+                // Build a meaningful structure to put your data in. Here we want two
+                // floats.
+                struct __attribute__( ( __packed__ ) ) {
+                    float v1;
+                    float v2;
+                } data;
+
+                // Copy the bytes from the usb receive buffer into our structure so we
+                // can use the information
+                USB_Msg_Read_Into( &data, sizeof( data ) );
+
+                // Call MEGN540_Lab_Task Function
+                Divide_And_Send( data.v1, data.v2 );
                 // /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case '+':
             if( USB_Msg_Length() >= _Message_Length( '+' ) ) {
                 // then process your plus...
+                USB_Msg_Get();  // removes the first character from the received buffer,
+                                // we already know it was a * so no need to save it as a
+                                // variable
 
+                // Build a meaningful structure to put your data in. Here we want two
+                // floats.
+                struct __attribute__( ( __packed__ ) ) {
+                    float v1;
+                    float v2;
+                } data;
+
+                // Copy the bytes from the usb receive buffer into our structure so we
+                // can use the information
+                USB_Msg_Read_Into( &data, sizeof( data ) );
+
+                // Call MEGN540_Lab_Task Function
+                Add_And_Send( data.v1, data.v2 );
                 // /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case '-':
             if( USB_Msg_Length() >= _Message_Length( '-' ) ) {
                 // then process your minus...
+                USB_Msg_Get();  // removes the first character from the received buffer,
+                                // we already know it was a * so no need to save it as a
+                                // variable
 
+                // Build a meaningful structure to put your data in. Here we want two
+                // floats.
+                struct __attribute__( ( __packed__ ) ) {
+                    float v1;
+                    float v2;
+                } data;
+
+                // Copy the bytes from the usb receive buffer into our structure so we
+                // can use the information
+                USB_Msg_Read_Into( &data, sizeof( data ) );
+
+                // Call MEGN540_Lab_Task Function
+                Subtract_And_Send( data.v1, data.v2 );
                 // /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case '~':
             if( USB_Msg_Length() >= _Message_Length( '~' ) ) {
                 // then process your reset by setting the task_restart flag defined in Lab1_Tasks.h
+                Task_Activate( &task_restart );
 
                 // /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
+        case 't':
+            if( USB_Msg_Length() >= _Message_Length( 't' ) ) {
+                USB_Msg_Get();
+                uint8_t time_type = USB_Msg_Get();
+                if( time_type == 0 ) {
+
+                    // float _time_since_last = 0.0;
+                    Send_Time_Now( 0.0 );
+                    // Subtract_And_Send( 3.0, 1.0 );
+                } else if( time_type == 1 ) {
+                    Send_Loop_Time( _time_since_last );
+                }
+            }
+            break;
+        case 'T':
+            if( USB_Msg_Length() >= _Message_Length( 'T' ) ) {}
+            break;
         default:
             // What to do if you dont recognize the command character
+            USB_Send_Msg( "cc", '?', &command, sizeof( command ) );
+            USB_Flush_Input_Buffer();
             break;
     }
 

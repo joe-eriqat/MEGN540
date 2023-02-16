@@ -42,17 +42,16 @@
 #ifndef LAB2_TIMING_TIMING_H
 #define LAB2_TIMING_TIMING_H
 
-#include <avr/io.h>         // Board Specific pin definations
 #include <avr/interrupt.h>  // for interrupt service routine use
+#include <avr/io.h>         // Board Specific pin definations
 
 #include <ctype.h>
-
 
 /**
  * Function SetupTimer0 initializes Timer0 to have a prescalar of XX and initializes the compare
  * feature for use in an ISR.  It also enables ISR's.
  */
-void Initialize_Timing( );
+void Initialize_Timing();
 
 /**
  * These functions return the individual parts of the Time_t struct, useful if you only care about
@@ -65,20 +64,23 @@ uint16_t Timing_Get_Micro();
 /**
  * Struct Time_t captures the time based in milliseconds at a 4-microsecond resolution.
  */
-typedef struct { uint32_t millisec; uint16_t microsec; } Time_t;
+typedef struct {
+    uint32_t millisec;
+    uint16_t microsec;
+} Time_t;
 
 /**
  * This function gets the current time and returns it in a Time_t structure.
  * @return
  */
 Time_t Timing_Get_Time();
-float  Timing_Get_Time_Sec();
+float Timing_Get_Time_Sec();
 
 /**
  * This function takes a start time and calculates the time since that time, it returns it in the Time struct.
  * @param p_time_start a pointer to a start time struct
  * @return (Time_t) Time since the other time.
  */
-float  Timing_Seconds_Since(const Time_t* time_start_p );
+float Timing_Seconds_Since( const Time_t* time_start_p );
 
-#endif //LAB2_TIMING_TIMING_H
+#endif  // LAB2_TIMING_TIMING_H

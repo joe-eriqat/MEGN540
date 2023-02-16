@@ -43,12 +43,15 @@ import serial # FOR SERIAL INTERFACE
 import struct # FOR BINARY DATA INTERFACING
 import time   # FOR TIME STAMPING DATA
 
-
-
 # FOR REALTIME PLOT
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
-from matplotlib.backends.backend_tkagg import(FigureCanvasTkAgg,NavigationToolbar2Tk)
+try:
+    from matplotlib.backends.backend_tkagg import NavigationToolbar2TkAgg
+except ImportError:
+    from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
+
+from matplotlib.backends.backend_tkagg import(FigureCanvasTkAgg)
 
 
 class SerialData:
