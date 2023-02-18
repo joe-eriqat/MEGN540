@@ -44,11 +44,11 @@ void Initialize_Modules( float _not_used_ )
 {
     Initialize_USB();
     // Initialize Tasks and their associated funciton connections
-    Initialize_Task( &task_restart, -1, Initialize_Modules );
+    Initialize_Task( &task_restart, Initialize_Modules );
 
     // once you have everythign else working  you can setup the message handling task to be managed by our task management
-    Initialize_Task( &task_message_handling, 0, Task_Message_Handling );
-    Task_Activate( &task_message_handling );
+    Initialize_Task( &task_message_handling, Task_Message_Handling );
+    Task_Activate( &task_message_handling, 0 );
 }
 
 /** Main program entry point. This routine configures the hardware required by the application, then

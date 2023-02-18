@@ -86,7 +86,7 @@ float Timing_Get_Time_Sec()
 {
     // *** MEGN540 Lab 2 ***
     // YOUR CODE HERE
-    return ( _count_ms / 1000.0f );
+    return ( _count_ms * 1e-3 + ( TCNT0 * 4 ) * 1e-6 );
 }
 Time_t Timing_Get_Time()
 {
@@ -127,7 +127,7 @@ float Timing_Seconds_Since( const Time_t* time_start_p )
 
     float current_time = Timing_Get_Time_Sec();
 
-    float delta_time = current_time - ( time_start_p->millisec / 1000.0f );
+    float delta_time = current_time - ( time_start_p->millisec * 1e-3 + time_start_p->microsec * 1e-6 );
     return delta_time;
 }
 

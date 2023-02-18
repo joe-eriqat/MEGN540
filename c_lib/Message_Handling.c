@@ -161,7 +161,7 @@ void Task_Message_Handling( float _time_since_last )
         case '~':
             if( USB_Msg_Length() >= _Message_Length( '~' ) ) {
                 // then process your reset by setting the task_restart flag defined in Lab1_Tasks.h
-                Task_Activate( &task_restart );
+                Task_Activate( &task_restart, -1 );
 
                 // /* MEGN540 -- LAB 2 */ command_processed = true;
             }
@@ -173,15 +173,41 @@ void Task_Message_Handling( float _time_since_last )
                 if( time_type == 0 ) {
 
                     // float _time_since_last = 0.0;
-                    Send_Time_Now( 0.0 );
+                    Task_Activate( &task_send_time, -1 );
                     // Subtract_And_Send( 3.0, 1.0 );
                 } else if( time_type == 1 ) {
-                    Send_Loop_Time( _time_since_last );
+                    // USB_Send_Msg( "cc", 'p', &command, sizeof( command ) );
+                    // Send_Loop_Time( _time_since_last );
+                    Task_Activate( &task_time_loop, -1 /*do only once*/ );
                 }
             }
             break;
         case 'T':
-            if( USB_Msg_Length() >= _Message_Length( 'T' ) ) {}
+            if( USB_Msg_Length() >= _Message_Length( 'T' ) ) {
+                USB_Msg_Get();
+                uint8_t time_type = USB_Msg_Get();
+                float duration;
+                USB_Msg_Read_Into( &duration, sizeof( duration ) );
+
+                if( time_type == 0 ) {
+                    // float _time_since_last = 0.0;
+                    if( duration > 0 ) {
+                        Task_Activate( &task_send_time, duration );
+                    } else {
+                        Task_Cancel( &task_send_time );
+                    }
+
+                    // Subtract_And_Send( 3.0, 1.0 );
+                } else if( time_type == 1 ) {
+                    // USB_Send_Msg( "cc", 'p', &command, sizeof( command ) );
+                    // Send_Loop_Time( _time_since_last );
+                    if( duration > 0 ) {
+                        Task_Activate( &task_time_loop, duration );
+                    } else {
+                        Task_Cancel( &task_time_loop );
+                    }
+                }
+            }
             break;
         default:
             // What to do if you dont recognize the command character

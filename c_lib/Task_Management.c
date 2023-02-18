@@ -6,20 +6,21 @@
  *  Note that a negative run_period indicates the task should only be performed once, while
  *  a run_period of 0 indicates the task should be run every time.
  */
-void Initialize_Task( Task_t* task, float run_period, void ( *task_fcn_ptr )( float ) )
+void Initialize_Task( Task_t* task, void ( *task_fcn_ptr )( float ) )
 {
     task->is_active              = false;
-    task->run_period             = run_period;
+    task->run_period             = -1;
     task->time_last_ran.microsec = 0;
     task->time_last_ran.millisec = 0;
     task->task_fcn_ptr           = task_fcn_ptr;
 }
 
 /** Function Task_Activate changes the internal state to enable the task **/
-void Task_Activate( Task_t* task )
+void Task_Activate( Task_t* task, float run_period )
 {
     //****** MEGN540 --  START IN LAB 1, UPDATE IN Lab 2 ******//
-    task->is_active = true;
+    task->is_active  = true;
+    task->run_period = run_period;
     // Here you should change the state of the is_active member and set the time to now (lab 2)
     // to identify the task is active
 }
@@ -51,9 +52,10 @@ bool Task_Run_If_Ready( Task_t* task )
 {
     //****** MEGN540 --  START IN LAB 1, UPDATE IN Lab 2   ******//
 
-    if( task->is_active ) {
+    if( task->is_active && Timing_Seconds_Since( &task->time_last_ran ) >= ( task->run_period ) ) {
+        task->task_fcn_ptr( Timing_Seconds_Since( &task->time_last_ran ) );
+
         task->time_last_ran = Timing_Get_Time();
-        task->task_fcn_ptr( task->time_last_ran.millisec );
 
         if( task->run_period < 0 ) {
             Task_Cancel( task );

@@ -49,7 +49,7 @@ typedef struct {
  * @param run_period is the period (in seconds) the task should repeat at. If -1, the task should only be run once.
  * @param task_fcn_ptr is the function pointer to the task function to execute akin to void Task_Foo(float), it will be passed the time since last run.
  */
-void Initialize_Task( Task_t* task, float run_period, void ( *task_fcn_ptr )( float ) );
+void Initialize_Task( Task_t* task, void ( *task_fcn_ptr )( float ) );
 
 /**
  * @brief Function Task_Activate sets the state of is_active to true and resets the time last ran to the current time. Repeated calles to Task_Activate on an
@@ -57,7 +57,7 @@ void Initialize_Task( Task_t* task, float run_period, void ( *task_fcn_ptr )( fl
  *
  * @param task is a pointer to the task object of interest
  */
-void Task_Activate( Task_t* task );
+void Task_Activate( Task_t* task, float run_period );
 
 /**
  * @brief Function Task_Cancel sets the state of is_active to false
