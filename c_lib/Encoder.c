@@ -1,5 +1,9 @@
 #include "Encoder.h"
 
+#include "Bit_Operations.h"
+
+#define COUNTS_TO_RAD 0.006906876230823
+
 /**
  * Internal counters for the Interrupts to increment or decrement as necessary.
  */
@@ -18,29 +22,33 @@ static volatile int32_t _right_counts = 0;  // Static limits it's use to this fi
 // Hint, use avr's bit_is_set function to help
 static inline bool Right_XOR()
 {
-    return 0;
-}  // MEGN540 Lab 3 TODO
+    // return BIT_IS_SET( PORTE, PORTE6 );
+    return BIT_IS_SET( PINE, PINE6 );
+}  // MEGN540 Lab 3
 static inline bool Right_B()
 {
-    return 0;
-}  // MEGN540 Lab 3 TODO
+    // return BIT_IS_SET( PORTF, PORTF0 );
+    return BIT_IS_SET( PINF, PINF0 );
+}  // MEGN540 Lab 3
 static inline bool Right_A()
 {
-    return 0;
-}  // MEGN540 Lab 3 TODO
+    return Right_XOR() ^ Right_B();
+}  // MEGN540 Lab 3
 
 static inline bool Left_XOR()
 {
-    return 0;
-}  // MEGN540 Lab 3 TODO
+    // return BIT_IS_SET( PORTB, PORTB4 );
+    return BIT_IS_SET( PINB, PINB4 );
+}  // MEGN540 Lab 3
 static inline bool Left_B()
 {
-    return 0;
-}  // MEGN540 Lab 3 TODO
+    // return BIT_IS_SET( PORTE, PORTE2 );
+    return BIT_IS_SET( PINE, PINE2 );
+}  // MEGN540 Lab 3
 static inline bool Left_A()
 {
-    return 0;
-}  // MEGN540 Lab 3 TODO
+    return Left_XOR() ^ Left_B();
+}  // MEGN540 Lab 3
 
 /**
  * Function Encoders_Init initializes the encoders, sets up the pin change interrupts, and zeros the initial encoder
@@ -70,6 +78,30 @@ void Initialize_Encoders()
 
     _left_counts  = 0;  // MEGN540 Lab 3 TODO
     _right_counts = 0;  // MEGN540 Lab 3 TODO
+
+    // right side encoder
+    CLR_BIT( DDRF, DDF0 );
+    // SET_BIT( PORTF, PORTF0 );
+    SET_BIT( PINF, PINF0 );
+    CLR_BIT( DDRE, DDE6 );
+    // SET_BIT( PORTE, PORTE6 );
+    SET_BIT( PINE, PINE6 );
+
+    // left encoder
+    CLR_BIT( DDRE, DDE2 );
+    // SET_BIT( PORTE, PORTE2 );
+    SET_BIT( PINE, PINE2 );
+    CLR_BIT( DDRB, DDB4 );
+    // SET_BIT( PORTB, PORTB4 );
+    SET_BIT( PINB, PINB4 );
+
+    SET_BIT( PCICR, PCIE0 );
+    SET_BIT( PCIFR, PCIF0 );
+    SET_BIT( PCMSK0, PCINT4 );
+
+    CLR_BIT( EIMSK, INT6 );
+    SET_BIT( EICRB, ISC60 );
+    SET_BIT( EIMSK, INT6 );
 }
 
 /**
@@ -83,7 +115,11 @@ int32_t Encoder_Counts_Left()
     // Note: Interrupts can trigger during a function call and an int32 requires
     // multiple clock cycles to read/save. You may want to stop interrupts, copy the value,
     // and re-enable interrupts to prevent this from corrupting your read/write.
-    return 0;
+    cli();
+    int32_t count = _left_counts;
+    //_left_counts  = 0;
+    sei();
+    return count;
 }
 
 /**
@@ -97,7 +133,11 @@ int32_t Encoder_Counts_Right()
     // Note: Interrupts can trigger during a function call and an int32 requires
     // multiple clock cycles to read/save. You may want to stop interrupts, copy the value,
     // and re-enable interrupts to prevent this from corrupting your read/write.
-    return 0;
+    cli();
+    int32_t count = _right_counts;
+    //_right_counts = 0;
+    sei();
+    return count;
 }
 
 /**
@@ -108,7 +148,7 @@ float Encoder_Rad_Left()
 {
     // *** MEGN540 Lab3 ***
     // YOUR CODE HERE.  How many counts per rotation???
-    return 0;
+    return Encoder_Counts_Left() * COUNTS_TO_RAD;
 }
 
 /**
@@ -119,7 +159,7 @@ float Encoder_Rad_Right()
 {
     // *** MEGN540 Lab3 ***
     // YOUR CODE HERE.  How many counts per rotation???
-    return 0;
+    return Encoder_Counts_Right() * COUNTS_TO_RAD;
 }
 
 /**
@@ -127,16 +167,23 @@ float Encoder_Rad_Right()
  * the Pin Change Interrupts can trigger for multiple pins.
  * @return
  */
-// ISR()
-//{
-//
-//}
+ISR( PCINT0_vect )
+{
+    if( _last_left_XOR != Left_XOR() ) {
+        _left_counts += ( Left_A() ^ _last_left_B ) - ( _last_left_A ^ Left_B() );
+        _last_left_A   = Left_A();
+        _last_left_B   = Left_B();
+        _last_left_XOR = Left_XOR();
+    }
+}
 
 /**
  * Interrupt Service Routine for the right Encoder.
  * @return
  */
-// ISR()
-//{
-//
-//}
+ISR( INT6_vect )
+{
+    _right_counts += ( Right_A() ^ _last_right_B ) - ( _last_right_A ^ Right_B() );
+    _last_right_A = Right_A();
+    _last_right_B = Right_B();
+}

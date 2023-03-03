@@ -58,7 +58,7 @@ void Task_Message_Handling( float _time_since_last )
     // bytes yet, the command persists
     char command = USB_Msg_Peek();
 
-    // /* MEGN540 -- LAB 2 */ bool command_processed = false;
+    /* MEGN540 -- LAB 2 */ bool command_processed = false;
 
     // process command
     switch( command ) {
@@ -86,7 +86,7 @@ void Task_Message_Handling( float _time_since_last )
                 // Call MEGN540_Lab_Task Function
                 Multiply_And_Send( data.v1, data.v2 );
 
-                // /* MEGN540 -- LAB 2 */ command_processed = true;
+                /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case '/':
@@ -109,7 +109,7 @@ void Task_Message_Handling( float _time_since_last )
 
                 // Call MEGN540_Lab_Task Function
                 Divide_And_Send( data.v1, data.v2 );
-                // /* MEGN540 -- LAB 2 */ command_processed = true;
+                /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case '+':
@@ -132,7 +132,7 @@ void Task_Message_Handling( float _time_since_last )
 
                 // Call MEGN540_Lab_Task Function
                 Add_And_Send( data.v1, data.v2 );
-                // /* MEGN540 -- LAB 2 */ command_processed = true;
+                /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case '-':
@@ -155,7 +155,7 @@ void Task_Message_Handling( float _time_since_last )
 
                 // Call MEGN540_Lab_Task Function
                 Subtract_And_Send( data.v1, data.v2 );
-                // /* MEGN540 -- LAB 2 */ command_processed = true;
+                /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case '~':
@@ -163,23 +163,25 @@ void Task_Message_Handling( float _time_since_last )
                 // then process your reset by setting the task_restart flag defined in Lab1_Tasks.h
                 Task_Activate( &task_restart, -1 );
 
-                // /* MEGN540 -- LAB 2 */ command_processed = true;
+                /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case 't':
             if( USB_Msg_Length() >= _Message_Length( 't' ) ) {
                 USB_Msg_Get();
                 uint8_t time_type = USB_Msg_Get();
-                if( time_type == 0 ) {
 
-                    // float _time_since_last = 0.0;
-                    Task_Activate( &task_send_time, -1 );
-                    // Subtract_And_Send( 3.0, 1.0 );
-                } else if( time_type == 1 ) {
-                    // USB_Send_Msg( "cc", 'p', &command, sizeof( command ) );
-                    // Send_Loop_Time( _time_since_last );
-                    Task_Activate( &task_time_loop, -1 /*do only once*/ );
+                switch( time_type ) {
+                    case 0x00:  // time now
+                        Task_Activate( &task_send_time, -1 );
+                        break;
+                    case 0x01:  // time to complete a full loop iteration
+                        Task_Activate( &task_time_loop, -1 );
+                        break;
+                    default: break;
                 }
+
+                /* MEGN540 -- LAB 2 */ command_processed = true;
             }
             break;
         case 'T':
@@ -187,26 +189,70 @@ void Task_Message_Handling( float _time_since_last )
                 USB_Msg_Get();
                 uint8_t time_type = USB_Msg_Get();
                 float duration;
+
                 USB_Msg_Read_Into( &duration, sizeof( duration ) );
 
-                if( time_type == 0 ) {
-                    // float _time_since_last = 0.0;
-                    if( duration > 0 ) {
-                        Task_Activate( &task_send_time, duration );
-                    } else {
-                        Task_Cancel( &task_send_time );
-                    }
-
-                    // Subtract_And_Send( 3.0, 1.0 );
-                } else if( time_type == 1 ) {
-                    // USB_Send_Msg( "cc", 'p', &command, sizeof( command ) );
-                    // Send_Loop_Time( _time_since_last );
-                    if( duration > 0 ) {
-                        Task_Activate( &task_time_loop, duration );
-                    } else {
-                        Task_Cancel( &task_time_loop );
-                    }
+                switch( time_type ) {
+                    case 0x00:  // time now
+                        if( duration > 0 ) {
+                            Task_Activate( &task_send_time, duration );
+                        } else {
+                            Task_Cancel( &task_send_time );
+                        }
+                        break;
+                    case 0x01:  // time to complete a full loop iteration
+                        if( duration > 0 ) {
+                            Task_Activate( &task_time_loop, duration );
+                        } else {
+                            Task_Cancel( &task_time_loop );
+                        }
+                        break;
+                    default: break;
                 }
+
+                /* MEGN540 -- LAB 2 */ command_processed = true;
+            }
+            break;
+        case 'e':
+            if( USB_Msg_Length() >= _Message_Length( 'e' ) ) {
+                USB_Msg_Get();  // remove command
+                Task_Activate( &task_send_encoder_counts, -1 );
+                command_processed = true;
+            }
+            break;
+        case 'E':
+            if( USB_Msg_Length() >= _Message_Length( 'E' ) ) {
+                USB_Msg_Get();  // remove command
+                float repeat_time;
+                USB_Msg_Read_Into( &repeat_time, sizeof( repeat_time ) );
+
+                if( repeat_time > 0 ) {
+                    Task_Activate( &task_send_encoder_counts, repeat_time );
+                } else {
+                    Task_Cancel( &task_send_encoder_counts );
+                }
+                command_processed = true;
+            }
+            break;
+        case 'b':
+            if( USB_Msg_Length() >= _Message_Length( 'b' ) ) {
+                USB_Msg_Get();  // remove command
+                Task_Activate( &task_send_battery_voltage, -1 );
+                command_processed = true;
+            }
+            break;
+        case 'B':
+            if( USB_Msg_Length() >= _Message_Length( 'B' ) ) {
+                USB_Msg_Get();  // remove command
+                float repeat_time;
+                USB_Msg_Read_Into( &repeat_time, sizeof( repeat_time ) );
+
+                if( repeat_time > 0 ) {
+                    Task_Activate( &task_send_battery_voltage, repeat_time );
+                } else {
+                    Task_Cancel( &task_send_battery_voltage );
+                }
+                command_processed = true;
             }
             break;
         default:
@@ -217,10 +263,10 @@ void Task_Message_Handling( float _time_since_last )
     }
 
     //********* MEGN540 -- LAB 2 ************//
-    // if( command_processed ) {
-    //     // RESET the WATCHDOG TIMER
-    //     Task_Activate( &task_message_handling_watchdog );
-    // }
+    if( command_processed ) {
+        // RESET the WATCHDOG TIMER
+        Task_Activate( &task_message_handling_watchdog, 0.1 );
+    }
 }
 
 /**
