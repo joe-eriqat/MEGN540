@@ -104,9 +104,10 @@ static void _USB_Write_Data()
         return;
 
     /* Select the Serial Rx Endpoint */
-    Endpoint_SelectEndpoint( CDC_TX_EPADDR );
+
     uint8_t DataLength = rb_length_B( &_usb_send_buffer );
 
+    Endpoint_SelectEndpoint( CDC_TX_EPADDR );
     if( Endpoint_IsReadWriteAllowed() && DataLength != 0 ) {
         uint8_t sent_bytes = 0;
 
@@ -222,7 +223,7 @@ void USB_Send_Byte( uint8_t byte )
 void USB_Send_Data( void* p_data, uint8_t data_len )
 {
     uint8_t* p_byte = p_data;
-    for( int i = 0; i < data_len; i++ ) {
+    for( uint8_t i = 0; i < data_len; i++ ) {
         USB_Send_Byte( p_byte[i] );
     }
     // *** MEGN540  ***
@@ -271,9 +272,7 @@ void USB_Send_Msg( char* format, char cmd, void* p_data, uint8_t data_len )
     // *** MEGN540  ***
     // YOUR CODE HERE. Remember c-strings are null terminated. Use the above functions to help!
 
-    uint8_t format_length = strlen( format ) + 1;
-
-    uint8_t msg_length = 1 + format_length + data_len;
+    uint8_t msg_length = 2 + strlen( format ) + data_len;
 
     USB_Send_Byte( msg_length );
     USB_Send_Str( format );

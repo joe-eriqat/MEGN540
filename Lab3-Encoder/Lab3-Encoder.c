@@ -56,7 +56,7 @@ void Initialize_Modules( float _time_not_used_ )
     // Initialize all modules
     Initialize_USB();
     Initialize_Timing();
-    // Initialize_Battery_Monitor();
+    Initialize_Battery_Monitor();
     Initialize_Encoders();
 
     // Setup task handling
@@ -72,9 +72,10 @@ void Initialize_Modules( float _time_not_used_ )
     Initialize_Task( &task_send_time, Send_Time_Now );
 
     Initialize_Task( &task_send_encoder_counts, Send_Encoder_Counts );
-    // Initialize_Task( &task_send_battery_voltage, -1, Send_Battery_Voltage );
-    // Initialize_Task( &task_check_battery, 0.002, Check_Battery_Voltage );  // every 2ms
-    // Task_Activate( &task_check_battery );
+    Initialize_Task( &task_send_battery_voltage, Send_Battery_Voltage );
+    Initialize_Task( &task_check_battery, Check_Battery_Voltage );
+    Initialize_Task( &task_send_low_battery, Send_Battery_Low_Warning );
+    Task_Activate( &task_check_battery, .002 );  // every 2ms
 }
 
 /** Main program entry point. This routine configures the hardware required by the application, then
@@ -93,11 +94,14 @@ int main( void )
         Task_Run_If_Ready( &task_restart );
 
         Task_Run_If_Ready( &task_message_handling_watchdog );
-        Task_Run_If_Ready( &task_send_encoder_counts );
-        // Task_Run_If_Ready( &task_send_battery_voltage );
         Task_Run_If_Ready( &task_send_time );
-        // Task_Run_If_Ready( &task_check_battery );
         Task_Run_If_Ready( &task_time_loop );
+
+        Task_Run_If_Ready( &task_send_encoder_counts );
+        Task_Run_If_Ready( &task_send_battery_voltage );
+
+        Task_Run_If_Ready( &task_check_battery );
+        Task_Run_If_Ready( &task_send_low_battery );
     }
 
     return 0;

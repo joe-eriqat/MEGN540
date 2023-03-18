@@ -255,6 +255,98 @@ void Task_Message_Handling( float _time_since_last )
                 command_processed = true;
             }
             break;
+        case 'p':
+            if( USB_Msg_Length() >= _Message_Length( 'p' ) ) {
+                USB_Msg_Get();
+                if( Battery_Voltage() > 4.0 ) {
+                    struct __attribute__( ( __packed__ ) ) {
+                        uint16_t Left_PWM;
+                        uint16_t Right_PWM;
+                    } msg;
+                    // uint16_t Left_PWM;
+                    // uint16_t Right_PWM;
+                    USB_Msg_Read_Into( &msg.Left_PWM, sizeof( msg.Left_PWM ) );
+                    USB_Msg_Read_Into( &msg.Right_PWM, sizeof( msg.Right_PWM ) );
+                    Set_Motor_PWM( msg.Left_PWM, msg.Right_PWM );
+                    MotorPWM_Enable( true );
+
+                    USB_Send_Msg( "chh", 'p', &msg, sizeof( msg ) );
+                } else {
+                    USB_Flush_Input_Buffer();
+                    Send_Battery_Low_Warning( 0.0 );
+                }
+                command_processed = true;
+            }
+            break;
+        case 'P':
+            if( USB_Msg_Length() >= _Message_Length( 'P' ) ) {
+                USB_Msg_Get();
+                if( Battery_Voltage() > 4.0 ) {
+                    struct __attribute__( ( __packed__ ) ) {
+                        uint16_t Left_PWM;
+                        uint16_t Right_PWM;
+                        float duration;
+                    } P_msg;
+                    // uint16_t Left_PWM;
+                    // uint16_t Right_PWM;
+                    USB_Msg_Read_Into( &P_msg.Left_PWM, sizeof( P_msg.Left_PWM ) );
+                    USB_Msg_Read_Into( &P_msg.Right_PWM, sizeof( P_msg.Right_PWM ) );
+                    USB_Msg_Read_Into( &P_msg.duration, sizeof( P_msg.duration ) );
+
+                    Set_Motor_PWM( P_msg.Left_PWM, P_msg.Right_PWM );
+                    MotorPWM_Enable( true );
+                    task_timed_motor_run.time_last_ran = Timing_Get_Time();
+                    Task_Activate( &task_timed_motor_run, P_msg.duration );
+
+                    USB_Send_Msg( "chhf", 'P', &P_msg, sizeof( P_msg ) );
+                } else {
+                    USB_Flush_Input_Buffer();
+                    Send_Battery_Low_Warning( 0.0 );
+                }
+                command_processed = true;
+            }
+            break;
+        case 's':
+            if( USB_Msg_Length() >= _Message_Length( 's' ) ) {
+                USB_Flush_Input_Buffer();
+                Set_Motor_PWM( 0, 0 );
+                MotorPWM_Enable( false );
+                command_processed = true;
+            }
+            break;
+        case 'S':
+            if( USB_Msg_Length() >= _Message_Length( 'S' ) ) {
+                USB_Flush_Input_Buffer();
+                Set_Motor_PWM( 0, 0 );
+                MotorPWM_Enable( false );
+                command_processed = true;
+            }
+            break;
+        case 'q':
+            if( USB_Msg_Length() >= _Message_Length( 'q' ) ) {
+                USB_Msg_Get();
+
+                Task_Activate( &task_send_system_id, -1 );
+
+                command_processed = true;
+            }
+            break;
+        case 'Q':
+            if( USB_Msg_Length() >= _Message_Length( 'Q' ) ) {
+                USB_Msg_Get();
+
+                float repeat_time;
+                USB_Msg_Read_Into( &repeat_time, sizeof( repeat_time ) );
+
+                if( repeat_time > 0 ) {
+                    Task_Activate( &task_send_system_id, repeat_time );
+                } else {
+                    Task_Cancel( &task_send_system_id );
+                }
+
+                command_processed = true;
+            }
+            break;
         default:
             // What to do if you dont recognize the command character
             USB_Send_Msg( "cc", '?', &command, sizeof( command ) );
